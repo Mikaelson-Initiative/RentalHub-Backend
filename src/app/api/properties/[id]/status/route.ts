@@ -17,7 +17,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
     const updated = await prisma.property.update({
       where: { id },
-      data: { status, rejectionReason: reason ?? null },
+      data: { status, reviewNote: reason ?? null },
       include: {
         location: true,
         landlord: { select: { id: true, name: true, email: true, verificationStatus: true } },
