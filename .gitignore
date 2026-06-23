@@ -21,3 +21,4 @@ npm-debug.log*
 
 # Prisma generated (regenerated on install)
 # node_modules/@prisma — already covered above
+.vercel
