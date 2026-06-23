@@ -1,0 +1,174 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id                 String             @id @default(cuid())
+  name               String
+  email              String             @unique
+  password           String?
+  role               Role               @default(STUDENT)
+  emailVerified      Boolean            @default(false)
+  verificationStatus VerificationStatus @default(UNVERIFIED)
+  governmentIdUrl    String?
+  selfieUrl          String?
+  ownershipProofUrl  String?
+  bankName           String?
+  bankAccountNumber  String?
+  bankAccountName    String?
+  avatarUrl          String?
+  phoneNumber        String?
+  phoneVerified      Boolean            @default(false)
+  aiPreScreenScore   String?
+  aiPreScreenNote    String?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  properties Property[]
+  bookings   Booking[]
+  emailOtps  EmailOtp[]
+
+  @@map("users")
+}
+
+model EmailOtp {
+  id        String    @id @default(cuid())
+  userId    String
+  email     String
+  codeHash  String
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("email_otps")
+}
+
+model Location {
+  id             String     @id @default(cuid())
+  name           String     @unique
+  classification String     @default("Neighbourhood")
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+  properties     Property[]
+
+  @@map("locations")
+}
+
+model Property {
+  id               String         @id @default(cuid())
+  title            String
+  description      String
+  price            Decimal        @db.Decimal(10, 2)
+  distanceToCampus Decimal?       @db.Decimal(5, 2)
+  amenities        Json           @default("[]")
+  images           Json           @default("[]")
+  status           PropertyStatus @default(PENDING)
+  vacantUnits      Int            @default(1)
+  reviewNote       String?
+  aiScamFlag       Boolean        @default(false)
+  aiScamReason     String?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  locationId       String
+  landlordId       String
+  reviewedById     String?
+
+  location Location  @relation(fields: [locationId], references: [id])
+  landlord User      @relation(fields: [landlordId], references: [id], onDelete: Cascade)
+  bookings Booking[]
+
+  @@map("properties")
+}
+
+model Booking {
+  id                  String        @id @default(cuid())
+  status              BookingStatus @default(PENDING)
+  payoutStatus        PayoutStatus  @default(PENDING)
+  paymentStatus       PaymentStatus @default(PENDING)
+  bidAmount           Decimal?      @db.Decimal(10, 2)
+  amount              Decimal?      @db.Decimal(10, 2)
+  agencyFee           Decimal?      @db.Decimal(10, 2)
+  cautionFee          Decimal?      @db.Decimal(10, 2)
+  paidAt              DateTime?
+  moveInDate          DateTime?
+  leaseEndDate        DateTime?
+  movedInConfirmedAt  DateTime?
+  agreementSignedAt   DateTime?
+  agreementSignedName String?
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+  propertyId          String
+  studentId           String
+
+  property Property  @relation(fields: [propertyId], references: [id])
+  student  User      @relation(fields: [studentId], references: [id])
+  payments Payment[]
+
+  @@map("bookings")
+}
+
+model Payment {
+  id          String        @id @default(cuid())
+  bookingId   String
+  amount      Decimal       @db.Decimal(10, 2)
+  status      PaymentStatus @default(PENDING)
+  paystackRef String?       @unique
+  channel     String?
+  paidAt      DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  booking     Booking       @relation(fields: [bookingId], references: [id])
+
+  @@map("payments")
+}
+
+enum Role {
+  STUDENT
+  LANDLORD
+  ADMIN
+}
+
+enum VerificationStatus {
+  UNVERIFIED
+  VERIFIED
+  SUSPENDED
+  UNDER_REVIEW
+  REJECTED
+}
+
+enum PropertyStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  AWAITING_PAYMENT
+  PAID
+  EXPIRED
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  REFUNDED
+  PARTIAL_REFUND
+}
+
+enum PayoutStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
