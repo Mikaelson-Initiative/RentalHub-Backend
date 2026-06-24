@@ -21,7 +21,7 @@ export async function GET(req: NextRequest) {
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const where: any = {};
-    if (mine && auth) {
+    if (mine && auth?.role === "LANDLORD") {
       where.landlordId = auth.userId;
     } else if (status && auth?.role === "ADMIN") {
       where.status = status;
