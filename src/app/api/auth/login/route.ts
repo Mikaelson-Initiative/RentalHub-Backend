@@ -3,8 +3,12 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { signToken } from "@/lib/auth";
 import { ok, fail, catchError } from "@/lib/res";
+import { loginLimiter } from "@/lib/rate-limit";
 
 export async function POST(req: NextRequest) {
+  const limited = loginLimiter(req);
+  if (limited) return limited;
+
   try {
     const { email, password } = await req.json();
     if (!email || !password) return fail("Email and password are required");

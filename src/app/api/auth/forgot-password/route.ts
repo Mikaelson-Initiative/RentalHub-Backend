@@ -3,8 +3,12 @@ import { randomBytes } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { sendPasswordResetEmail } from "@/lib/email";
 import { ok, catchError } from "@/lib/res";
+import { forgotPasswordLimiter } from "@/lib/rate-limit";
 
 export async function POST(req: NextRequest) {
+  const limited = forgotPasswordLimiter(req);
+  if (limited) return limited;
+
   try {
     const { email } = await req.json();
 
