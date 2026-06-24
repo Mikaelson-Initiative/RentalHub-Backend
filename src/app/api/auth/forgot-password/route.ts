@@ -6,7 +6,7 @@ import { ok, catchError } from "@/lib/res";
 import { forgotPasswordLimiter } from "@/lib/rate-limit";
 
 export async function POST(req: NextRequest) {
-  const limited = forgotPasswordLimiter(req);
+  const limited = await forgotPasswordLimiter(req);
   if (limited) return limited;
 
   try {

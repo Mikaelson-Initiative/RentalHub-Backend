@@ -6,7 +6,7 @@ import { ok, fail, catchError } from "@/lib/res";
 import { loginLimiter } from "@/lib/rate-limit";
 
 export async function POST(req: NextRequest) {
-  const limited = loginLimiter(req);
+  const limited = await loginLimiter(req);
   if (limited) return limited;
 
   try {

@@ -1,43 +1,36 @@
+import { Ratelimit } from "@upstash/ratelimit";
+import { Redis } from "@upstash/redis";
 import { NextRequest, NextResponse } from "next/server";
 
-interface Window {
-  count: number;
-  resetAt: number;
+// Reads UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN from env
+const redis = Redis.fromEnv();
+
+/**
+ * Extract the real client IP securely.
+ *
+ * Attack surface: a client can inject arbitrary values into x-forwarded-for
+ * by setting it before the request reaches any trusted proxy. Vercel's edge
+ * network APPENDS the real IP as the last entry and also sets x-real-ip —
+ * both are injected by infrastructure, not the client.
+ *
+ * Rule: trust x-real-ip first (Vercel sets it), then take the LAST
+ * x-forwarded-for entry (added by Vercel's edge), never the first.
+ */
+function getIp(req: NextRequest): string {
+  return (
+    req.headers.get("x-real-ip") ??
+    req.headers.get("x-forwarded-for")?.split(",").at(-1)?.trim() ??
+    "unknown"
+  );
 }
 
-// In-memory store — resets on cold start (acceptable for serverless; keeps Neon-free stack)
-const store = new Map<string, Window>();
+function makeChecker(limiter: Ratelimit) {
+  return async function check(req: NextRequest): Promise<NextResponse | null> {
+    const ip = getIp(req);
+    const { success, limit, remaining, reset } = await limiter.limit(ip);
 
-/** Purge expired windows to prevent unbounded memory growth. */
-function prune() {
-  const now = Date.now();
-  for (const [key, win] of store) {
-    if (win.resetAt < now) store.delete(key);
-  }
-}
-
-export function rateLimit(opts: { limit: number; windowMs: number }) {
-  return function check(req: NextRequest): NextResponse | null {
-    const ip =
-      req.headers.get("x-forwarded-for")?.split(",")[0].trim() ??
-      req.headers.get("x-real-ip") ??
-      "unknown";
-
-    const key = `${req.nextUrl.pathname}:${ip}`;
-    const now = Date.now();
-
-    // Prune ~1% of calls to avoid O(n) on every request
-    if (Math.random() < 0.01) prune();
-
-    const win = store.get(key);
-    if (!win || win.resetAt < now) {
-      store.set(key, { count: 1, resetAt: now + opts.windowMs });
-      return null; // allowed
-    }
-
-    win.count += 1;
-    if (win.count > opts.limit) {
-      const retryAfter = Math.ceil((win.resetAt - now) / 1000);
+    if (!success) {
+      const retryAfter = Math.max(0, Math.ceil((reset - Date.now()) / 1000));
       return new NextResponse(
         JSON.stringify({ success: false, error: "Too many requests. Please try again later." }),
         {
@@ -45,17 +38,22 @@ export function rateLimit(opts: { limit: number; windowMs: number }) {
           headers: {
             "Content-Type": "application/json",
             "Retry-After": String(retryAfter),
-            "X-RateLimit-Limit": String(opts.limit),
-            "X-RateLimit-Remaining": "0",
-            "X-RateLimit-Reset": String(Math.ceil(win.resetAt / 1000)),
+            "X-RateLimit-Limit": String(limit),
+            "X-RateLimit-Remaining": String(remaining),
+            "X-RateLimit-Reset": String(Math.ceil(reset / 1000)),
           },
         }
       );
     }
 
-    return null; // allowed
+    return null;
   };
 }
 
-export const forgotPasswordLimiter = rateLimit({ limit: 5, windowMs: 60 * 60 * 1000 });
-export const loginLimiter = rateLimit({ limit: 5, windowMs: 15 * 60 * 1000 });
+export const forgotPasswordLimiter = makeChecker(
+  new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(5, "1 h"), prefix: "rl:fp" })
+);
+
+export const loginLimiter = makeChecker(
+  new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(5, "15 m"), prefix: "rl:login" })
+);
