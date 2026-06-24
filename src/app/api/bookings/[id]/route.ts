@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
 import { ok, fail, catchError } from "@/lib/res";
+import { sendBookingConfirmedEmail, sendBookingCancelledEmail } from "@/lib/email";
 
 const INCLUDE = {
   property: {
@@ -56,6 +57,18 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       data: { status },
       include: INCLUDE,
     });
+
+    const student = updated.student;
+    const property = updated.property;
+    if (student && property) {
+      const area = property.location?.name ?? "—";
+      const landlordName = property.landlord?.name ?? "your landlord";
+      if (status === "CONFIRMED") {
+        await sendBookingConfirmedEmail(student.email, student.name, property.title, area, landlordName);
+      } else if (status === "CANCELLED") {
+        await sendBookingCancelledEmail(student.email, student.name, property.title, area, landlordName);
+      }
+    }
 
     return ok(updated);
   } catch (e) {

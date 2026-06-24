@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
 import { ok, fail, catchError } from "@/lib/res";
+import { sendPropertyApprovedEmail, sendPropertyRejectedEmail } from "@/lib/email";
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -23,6 +24,15 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         landlord: { select: { id: true, name: true, email: true, verificationStatus: true } },
       },
     });
+
+    const landlord = updated.landlord;
+    if (landlord) {
+      if (status === "APPROVED") {
+        await sendPropertyApprovedEmail(landlord.email, landlord.name, updated.title, updated.id);
+      } else if (status === "REJECTED") {
+        await sendPropertyRejectedEmail(landlord.email, landlord.name, updated.title, reason ?? null);
+      }
+    }
 
     return ok(updated);
   } catch (e) {

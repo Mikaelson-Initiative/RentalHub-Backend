@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
 import { ok, fail, catchError } from "@/lib/res";
+import { sendLandlordVerifiedEmail, sendLandlordRejectedEmail } from "@/lib/email";
 
 export async function GET(req: NextRequest) {
   try {
@@ -40,8 +41,11 @@ export async function PATCH(req: NextRequest) {
       select: { id: true, name: true, email: true, verificationStatus: true },
     });
 
-    // note is informational — log it server-side if provided
-    if (note) console.log(`Landlord ${landlordId} ${verificationStatus}: ${note}`);
+    if (action === "APPROVE") {
+      await sendLandlordVerifiedEmail(user.email, user.name);
+    } else {
+      await sendLandlordRejectedEmail(user.email, user.name, note ?? null);
+    }
 
     return ok(user);
   } catch (e) {

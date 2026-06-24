@@ -2,6 +2,9 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
 import { ok, fail, catchError } from "@/lib/res";
+import { sendPaymentReceiptEmail } from "@/lib/email";
+
+export const maxDuration = 30;
 
 export async function GET(req: NextRequest) {
   try {
@@ -31,12 +34,29 @@ export async function GET(req: NextRequest) {
     const booking = await prisma.booking.update({
       where: { id: bookingId },
       data: { paidAt: now, paymentStatus: "SUCCESS", status: "CONFIRMED" },
+      include: {
+        student: { select: { name: true, email: true } },
+        property: { select: { title: true, location: { select: { name: true } } } },
+      },
     });
 
     await prisma.property.update({
       where: { id: booking.propertyId },
       data: { vacantUnits: { decrement: 1 } },
     });
+
+    if (booking.student && booking.property) {
+      await sendPaymentReceiptEmail(
+        booking.student.email,
+        booking.student.name,
+        booking.property.title,
+        booking.property.location?.name ?? "—",
+        Number(booking.bidAmount ?? 0),
+        Number(booking.agencyFee ?? 0),
+        Number(booking.cautionFee ?? 0),
+        bookingId,
+      );
+    }
 
     return ok({ message: "Payment verified", booking });
   } catch (e) {
