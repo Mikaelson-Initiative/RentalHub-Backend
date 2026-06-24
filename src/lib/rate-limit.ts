@@ -57,5 +57,5 @@ export function rateLimit(opts: { limit: number; windowMs: number }) {
   };
 }
 
-export const forgotPasswordLimiter = rateLimit({ limit: 3, windowMs: 15 * 60 * 1000 });
-export const loginLimiter = rateLimit({ limit: 10, windowMs: 15 * 60 * 1000 });
+export const forgotPasswordLimiter = rateLimit({ limit: 5, windowMs: 60 * 60 * 1000 });
+export const loginLimiter = rateLimit({ limit: 5, windowMs: 15 * 60 * 1000 });
