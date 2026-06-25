@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
       select: {
         id: true, name: true, email: true, role: true,
         emailVerified: true, verificationStatus: true,
-        phoneNumber: true, avatarUrl: true,
+        phoneNumber: true, avatarUrl: true, campus: true,
         bankName: true, bankAccountNumber: true, bankAccountName: true,
         governmentIdUrl: true, selfieUrl: true, ownershipProofUrl: true,
         matricCardUrl: true,
@@ -44,7 +44,7 @@ export async function PATCH(req: NextRequest) {
       return ok({ message: "Password updated" });
     }
 
-    const allowed = ["name", "phoneNumber", "bankName", "bankAccountNumber", "bankAccountName", "governmentIdUrl", "selfieUrl", "ownershipProofUrl", "matricCardUrl"];
+    const allowed = ["name", "phoneNumber", "campus", "bankName", "bankAccountNumber", "bankAccountName", "governmentIdUrl", "selfieUrl", "ownershipProofUrl", "matricCardUrl"];
     const data: Record<string, unknown> = {};
     for (const key of allowed) {
       if (key in body && body[key] !== undefined) data[key] = body[key];

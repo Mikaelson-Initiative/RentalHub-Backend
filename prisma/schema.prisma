@@ -26,6 +26,7 @@ model User {
   avatarUrl            String?
   phoneNumber          String?
   phoneVerified        Boolean            @default(false)
+  campus               String             @default("bouesti")
   isFrozen             Boolean            @default(false)
   frozenReason         String?
   aiPreScreenScore     String?

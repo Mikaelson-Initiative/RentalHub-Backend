@@ -1,3 +1,4 @@
+import "server-only";
 import { NextResponse } from "next/server";
 
 export function ok(data: unknown, status = 200) {

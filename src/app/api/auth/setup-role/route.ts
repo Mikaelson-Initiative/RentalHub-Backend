@@ -6,16 +6,22 @@ import { ok, fail, catchError } from "@/lib/res";
 export async function PATCH(req: NextRequest) {
   try {
     const auth = requireAuth(req);
-    const { role } = await req.json();
+    const body = await req.json();
+    const { role, campus } = body;
 
     if (role !== "STUDENT" && role !== "LANDLORD") {
       return fail("Role must be STUDENT or LANDLORD");
     }
 
+    const updateData: { role: string; campus?: string } = { role };
+    if (role === "LANDLORD" && typeof campus === "string" && campus.trim()) {
+      updateData.campus = campus.trim();
+    }
+
     const user = await prisma.user.update({
       where: { id: auth.userId },
-      data: { role },
-      select: { id: true, name: true, email: true, role: true, emailVerified: true, verificationStatus: true },
+      data: updateData,
+      select: { id: true, name: true, email: true, role: true, emailVerified: true, verificationStatus: true, campus: true },
     });
 
     return ok(user);

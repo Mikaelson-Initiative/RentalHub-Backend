@@ -8,12 +8,20 @@ export const maxDuration = 30;
 
 export async function GET(req: NextRequest) {
   try {
-    requireAuth(req, "STUDENT");
+    const auth = requireAuth(req, "STUDENT");
     const { searchParams } = new URL(req.url);
     const reference = searchParams.get("reference");
     const bookingId = searchParams.get("bookingId");
 
     if (!reference || !bookingId) return fail("Reference and bookingId are required");
+
+    // Verify the booking belongs to this student before touching any records.
+    const bookingOwner = await prisma.booking.findUnique({
+      where: { id: bookingId },
+      select: { studentId: true },
+    });
+    if (!bookingOwner) return fail("Booking not found", 404);
+    if (bookingOwner.studentId !== auth.userId) return fail("Forbidden", 403);
 
     const res = await fetch(
       `https://api.paystack.co/transaction/verify/${encodeURIComponent(reference)}`,
