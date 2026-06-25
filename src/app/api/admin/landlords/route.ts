@@ -6,7 +6,7 @@ import { sendLandlordVerifiedEmail, sendLandlordRejectedEmail } from "@/lib/emai
 
 export async function GET(req: NextRequest) {
   try {
-    requireAuth(req, "ADMIN");
+    requireAuth(req, "ADMIN", "MODERATOR");
 
     const landlords = await prisma.user.findMany({
       where: { role: "LANDLORD" },
@@ -27,7 +27,7 @@ export async function GET(req: NextRequest) {
 
 export async function PATCH(req: NextRequest) {
   try {
-    requireAuth(req, "ADMIN");
+    requireAuth(req, "ADMIN", "MODERATOR");
     const { landlordId, action, note } = await req.json();
 
     if (!landlordId || !action) return fail("landlordId and action are required");

@@ -5,7 +5,7 @@ import { ok, catchError } from "@/lib/res";
 
 export async function GET(req: NextRequest) {
   try {
-    requireAuth(req, "ADMIN");
+    requireAuth(req, "ADMIN", "AUDITOR");
 
     const [totalProperties, pendingApprovals, totalUsers, totalBookings] = await Promise.all([
       prisma.property.count(),

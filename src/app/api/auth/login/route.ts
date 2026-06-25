@@ -22,6 +22,9 @@ export async function POST(req: NextRequest) {
     if (!user.emailVerified)
       return fail("Please verify your email before logging in", 403);
 
+    if (user.isFrozen)
+      return fail("Your account has been suspended. Contact support for assistance.", 403);
+
     const token = signToken({ userId: user.id, email: user.email, role: user.role });
 
     return ok({

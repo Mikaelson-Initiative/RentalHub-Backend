@@ -5,7 +5,7 @@ import { ok, catchError } from "@/lib/res";
 
 export async function GET(req: NextRequest) {
   try {
-    requireAuth(req, "ADMIN");
+    requireAuth(req, "ADMIN", "MODERATOR", "AUDITOR");
 
     const { searchParams } = new URL(req.url);
     const role = searchParams.get("role") ?? undefined;
@@ -19,6 +19,7 @@ export async function GET(req: NextRequest) {
         select: {
           id: true, name: true, email: true, role: true,
           emailVerified: true, verificationStatus: true,
+          isFrozen: true, frozenReason: true,
           createdAt: true,
           _count: { select: { properties: true, bookings: true } },
         },

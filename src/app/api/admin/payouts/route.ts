@@ -5,7 +5,7 @@ import { ok, fail, catchError } from "@/lib/res";
 
 export async function GET(req: NextRequest) {
   try {
-    requireAuth(req, "ADMIN");
+    requireAuth(req, "ADMIN", "AUDITOR");
 
     const payouts = await prisma.booking.findMany({
       where: { paidAt: { not: null }, payoutStatus: "PENDING" },
@@ -31,7 +31,7 @@ export async function GET(req: NextRequest) {
 
 export async function PATCH(req: NextRequest) {
   try {
-    requireAuth(req, "ADMIN");
+    requireAuth(req, "ADMIN", "AUDITOR");
     const { bookingId, action } = await req.json();
 
     if (!bookingId || !action) return fail("bookingId and action are required");
