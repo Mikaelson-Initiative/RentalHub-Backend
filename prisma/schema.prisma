@@ -213,6 +213,7 @@ model Inspection {
   completedAt DateTime?
   expiresAt   DateTime
   notes       String?
+  videoLink   String?
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
 

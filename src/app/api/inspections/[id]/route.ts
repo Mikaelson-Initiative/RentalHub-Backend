@@ -21,7 +21,7 @@ export async function PATCH(
       return fail("Your inspector account has not been verified yet.", 403);
 
     const { id } = await params;
-    const { action, notes } = await req.json();
+    const { action, notes, videoLink } = await req.json();
 
     if (!["accept", "complete"].includes(action))
       return fail("action must be 'accept' or 'complete'.", 400);
@@ -50,9 +50,24 @@ export async function PATCH(
     if (inspection.status !== "ACCEPTED")
       return fail("Inspection must be ACCEPTED before it can be completed.", 400);
 
+    if (!videoLink?.trim())
+      return fail("A Google Drive video link is required to complete an inspection.", 400);
+
+    // Accept Google Drive share links (drive.google.com) and YouTube links.
+    const isValidLink =
+      /^https:\/\/(drive|docs)\.google\.com\//.test(videoLink.trim()) ||
+      /^https:\/\/(www\.)?(youtube\.com|youtu\.be)\//.test(videoLink.trim());
+    if (!isValidLink)
+      return fail("Link must be a Google Drive or YouTube URL.", 400);
+
     const updated = await prisma.inspection.update({
       where: { id },
-      data: { status: "COMPLETED", completedAt: new Date(), notes: notes?.trim() ?? null },
+      data: {
+        status: "COMPLETED",
+        completedAt: new Date(),
+        notes: notes?.trim() ?? null,
+        videoLink: videoLink.trim(),
+      },
     });
     return ok(updated);
   } catch (e) {
