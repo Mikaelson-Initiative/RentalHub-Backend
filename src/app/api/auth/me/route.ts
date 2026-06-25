@@ -50,9 +50,17 @@ export async function PATCH(req: NextRequest) {
       if (key in body && body[key] !== undefined) data[key] = body[key];
     }
 
-    // Submitting all three doc URLs triggers verification review
+    // Landlord: submitting all three doc URLs triggers verification review
     if (data.governmentIdUrl && data.selfieUrl && data.ownershipProofUrl) {
       data.verificationStatus = "UNDER_REVIEW";
+    }
+
+    // Student: uploading matric card triggers verification review (don't downgrade if already VERIFIED)
+    if (auth.role === "STUDENT" && data.matricCardUrl) {
+      const current = await prisma.user.findUnique({ where: { id: auth.userId }, select: { verificationStatus: true } });
+      if (current?.verificationStatus === "UNVERIFIED") {
+        data.verificationStatus = "UNDER_REVIEW";
+      }
     }
 
     const user = await prisma.user.update({
@@ -63,6 +71,7 @@ export async function PATCH(req: NextRequest) {
         emailVerified: true, verificationStatus: true,
         phoneNumber: true, avatarUrl: true,
         bankName: true, bankAccountNumber: true, bankAccountName: true,
+        matricCardUrl: true,
       },
     });
 

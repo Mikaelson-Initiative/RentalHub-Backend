@@ -47,6 +47,9 @@ export async function POST(req: NextRequest) {
 
     if (!propertyId) return fail("Property ID is required");
 
+    const student = await prisma.user.findUnique({ where: { id: auth.userId }, select: { matricCardUrl: true } });
+    if (!student?.matricCardUrl) return fail("Please upload your student ID card before placing a booking. Go to Profile to upload.", 403);
+
     const property = await prisma.property.findUnique({ where: { id: propertyId } });
     if (!property) return fail("Property not found", 404);
     if (property.status !== "APPROVED") return fail("Property is not available for booking");
