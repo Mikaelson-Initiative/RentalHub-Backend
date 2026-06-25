@@ -49,12 +49,30 @@ async function main() {
     },
   });
 
+  // BOUESTI locations (Ikere-Ekiti)
+  const bouestiAreas = ["Uro", "Odo Oja", "Oke 'Kere", "Afao Road", "Olumilua Estate", "Ajebandele", "Ikoyi Estate", "Amoye GS"];
+  for (const name of bouestiAreas) {
+    await prisma.location.upsert({ where: { name }, update: { campus: "bouesti" }, create: { name, campus: "bouesti", classification: "Neighbourhood" } });
+  }
+
+  // UNILAG locations (University of Lagos, Yaba)
+  const unilagAreas = ["Akoka", "Yaba", "Abule Ijesha", "Bariga", "Iwaya", "Onike", "Sabo", "Otto-Awori"];
+  for (const name of unilagAreas) {
+    await prisma.location.upsert({ where: { name }, update: { campus: "unilag" }, create: { name, campus: "unilag", classification: "Neighbourhood" } });
+  }
+
+  // UNILORIN locations (University of Ilorin)
+  const unilorinAreas = ["Tanke", "Fate", "Oke-Odo", "Challenge", "Gaa-Akanbi", "Unity Road", "Ilofa Road", "Oke-Kura"];
+  for (const name of unilorinAreas) {
+    await prisma.location.upsert({ where: { name }, update: { campus: "unilorin" }, create: { name, campus: "unilorin", classification: "Neighbourhood" } });
+  }
+
   const [akoda, mbukpa, stateHousing, parliamentary, calabarSouth] = await Promise.all([
-    prisma.location.upsert({ where: { name: "Akoda" }, update: {}, create: { name: "Akoda", classification: "Neighbourhood" } }),
-    prisma.location.upsert({ where: { name: "Mbukpa" }, update: {}, create: { name: "Mbukpa", classification: "Neighbourhood" } }),
-    prisma.location.upsert({ where: { name: "State Housing" }, update: {}, create: { name: "State Housing", classification: "Estate" } }),
-    prisma.location.upsert({ where: { name: "Parliamentary Extension" }, update: {}, create: { name: "Parliamentary Extension", classification: "Neighbourhood" } }),
-    prisma.location.upsert({ where: { name: "Calabar South" }, update: {}, create: { name: "Calabar South", classification: "Neighbourhood" } }),
+    prisma.location.upsert({ where: { name: "Akoda" }, update: {}, create: { name: "Akoda", campus: "bouesti", classification: "Neighbourhood" } }),
+    prisma.location.upsert({ where: { name: "Mbukpa" }, update: {}, create: { name: "Mbukpa", campus: "bouesti", classification: "Neighbourhood" } }),
+    prisma.location.upsert({ where: { name: "State Housing" }, update: {}, create: { name: "State Housing", campus: "bouesti", classification: "Estate" } }),
+    prisma.location.upsert({ where: { name: "Parliamentary Extension" }, update: {}, create: { name: "Parliamentary Extension", campus: "bouesti", classification: "Neighbourhood" } }),
+    prisma.location.upsert({ where: { name: "Calabar South" }, update: {}, create: { name: "Calabar South", campus: "bouesti", classification: "Neighbourhood" } }),
   ]);
 
   const properties = [
