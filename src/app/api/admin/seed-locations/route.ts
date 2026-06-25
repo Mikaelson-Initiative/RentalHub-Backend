@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
-import { ok, fail, catchError } from "@/lib/res";
+import { ok, catchError } from "@/lib/res";
 
 const LOCATIONS: Array<{ name: string; campus: string }> = [
   // BOUESTI — Ikere-Ekiti
@@ -35,8 +35,7 @@ const LOCATIONS: Array<{ name: string; campus: string }> = [
 
 export async function POST(req: NextRequest) {
   try {
-    const auth = requireAuth(req, "ADMIN");
-    if (!auth.ok) return fail(auth.error, 401);
+    requireAuth(req, "ADMIN");
 
     let created = 0;
     let updated = 0;
