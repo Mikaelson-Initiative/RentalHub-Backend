@@ -24,10 +24,13 @@ export async function GET(req: NextRequest) {
     const where: any = {};
     if (mine && auth?.role === "LANDLORD") {
       where.landlordId = auth.userId;
+      // Landlord sees all their own listings regardless of listingStatus
     } else if (status && auth?.role === "ADMIN") {
       where.status = status;
     } else {
+      // Public marketplace: only show admin-approved AND available listings
       where.status = "APPROVED";
+      where.listingStatus = "AVAILABLE";
     }
 
     if (campus) {

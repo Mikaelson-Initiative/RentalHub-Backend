@@ -31,19 +31,28 @@ export async function GET(req: NextRequest) {
       data: { status: "SUCCESS", paidAt: now, channel: data.data.channel ?? null },
     });
 
-    const booking = await prisma.booking.update({
-      where: { id: bookingId },
-      data: { paidAt: now, paymentStatus: "SUCCESS", status: "PAID" },
-      include: {
-        student: { select: { name: true, email: true } },
-        property: { select: { title: true, location: { select: { name: true } } } },
-      },
+    // Atomically mark booking PAID and property RENTED in one transaction
+    const [booking] = await prisma.$transaction(async (tx) => {
+      const updatedBooking = await tx.booking.update({
+        where: { id: bookingId },
+        data: { paidAt: now, paymentStatus: "SUCCESS", status: "PAID" },
+        include: {
+          student: { select: { name: true, email: true } },
+          property: { select: { title: true, location: { select: { name: true } } } },
+        },
+      });
+
+      await tx.property.update({
+        where: { id: updatedBooking.propertyId },
+        data: {
+          listingStatus: "RENTED",
+          vacantUnits: { decrement: 1 },
+        },
+      });
+
+      return [updatedBooking];
     });
 
-    await prisma.property.update({
-      where: { id: booking.propertyId },
-      data: { vacantUnits: { decrement: 1 } },
-    });
 
     if (booking.student && booking.property) {
       await sendPaymentReceiptEmail(

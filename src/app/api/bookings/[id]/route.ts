@@ -57,11 +57,14 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     // so the student immediately sees the payment UI
     const dbStatus = status === "CONFIRMED" ? "AWAITING_PAYMENT" : status;
 
-    const updated = await prisma.booking.update({
-      where: { id },
-      data: { status: dbStatus },
-      include: INCLUDE,
-    });
+    const [updated] = await prisma.$transaction([
+      prisma.booking.update({ where: { id }, data: { status: dbStatus }, include: INCLUDE }),
+      // Flip listing availability: accepted → PENDING (holds the unit); cancelled → AVAILABLE
+      prisma.property.update({
+        where: { id: booking.propertyId },
+        data: { listingStatus: dbStatus === "AWAITING_PAYMENT" ? "PENDING" : "AVAILABLE" },
+      }),
+    ]);
 
     const student = updated.student;
     const property = updated.property;

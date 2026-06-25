@@ -82,6 +82,7 @@ model Property {
   amenities        Json           @default("[]")
   images           Json           @default("[]")
   status           PropertyStatus @default(PENDING)
+  listingStatus    ListingStatus  @default(AVAILABLE)
   vacantUnits      Int            @default(1)
   viewCount        Int            @default(0)
   reviewNote       String?
@@ -204,6 +205,12 @@ enum PropertyStatus {
   PENDING
   APPROVED
   REJECTED
+}
+
+enum ListingStatus {
+  AVAILABLE
+  PENDING
+  RENTED
 }
 
 enum BookingStatus {
