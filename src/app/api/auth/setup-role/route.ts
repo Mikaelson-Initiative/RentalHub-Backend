@@ -2,7 +2,6 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
 import { ok, fail, catchError } from "@/lib/res";
-import { Role } from "@prisma/client";
 
 export async function PATCH(req: NextRequest) {
   try {
@@ -14,15 +13,21 @@ export async function PATCH(req: NextRequest) {
       return fail("Role must be STUDENT or LANDLORD");
     }
 
-    const updateData: { role: Role; campus?: string } = { role: role as Role };
-    if (role === "LANDLORD" && typeof campus === "string" && campus.trim()) {
-      updateData.campus = campus.trim();
-    }
+    const trimmedCampus =
+      role === "LANDLORD" && typeof campus === "string" ? campus.trim() : "";
 
     const user = await prisma.user.update({
       where: { id: auth.userId },
-      data: updateData,
-      select: { id: true, name: true, email: true, role: true, emailVerified: true, verificationStatus: true, campus: true },
+      data: trimmedCampus ? { role, campus: trimmedCampus } : { role },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        emailVerified: true,
+        verificationStatus: true,
+        campus: true,
+      },
     });
 
     return ok(user);
