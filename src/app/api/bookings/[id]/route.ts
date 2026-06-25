@@ -53,9 +53,13 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (!["CONFIRMED", "CANCELLED"].includes(status))
       return fail("Status must be CONFIRMED or CANCELLED");
 
+    // Landlord "CONFIRMED" means they accepted — move straight to AWAITING_PAYMENT
+    // so the student immediately sees the payment UI
+    const dbStatus = status === "CONFIRMED" ? "AWAITING_PAYMENT" : status;
+
     const updated = await prisma.booking.update({
       where: { id },
-      data: { status },
+      data: { status: dbStatus },
       include: INCLUDE,
     });
 

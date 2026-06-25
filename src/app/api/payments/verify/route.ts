@@ -33,7 +33,7 @@ export async function GET(req: NextRequest) {
 
     const booking = await prisma.booking.update({
       where: { id: bookingId },
-      data: { paidAt: now, paymentStatus: "SUCCESS", status: "CONFIRMED" },
+      data: { paidAt: now, paymentStatus: "SUCCESS", status: "PAID" },
       include: {
         student: { select: { name: true, email: true } },
         property: { select: { title: true, location: { select: { name: true } } } },
