@@ -36,13 +36,20 @@ model User {
   createdAt            DateTime           @default(now())
   updatedAt            DateTime           @updatedAt
 
-  properties     Property[]
-  bookings       Booking[]
-  emailOtps      EmailOtp[]
-  notifications  Notification[]
-  reviewsGiven   Review[]    @relation("StudentReviews")
-  referralsOwned Referral[]  @relation("ReferralOwner")
-  referralsUsed  Referral[]  @relation("ReferralUser")
+  matricNumber        String?
+  studentIdUrl        String?
+  portalScreenshotUrl String?
+  strikeCount         Int     @default(0)
+
+  properties              Property[]
+  bookings                Booking[]
+  emailOtps               EmailOtp[]
+  notifications           Notification[]
+  reviewsGiven            Review[]       @relation("StudentReviews")
+  referralsOwned          Referral[]     @relation("ReferralOwner")
+  referralsUsed           Referral[]     @relation("ReferralUser")
+  inspectionsAsStudent    Inspection[]   @relation("InspectionStudent")
+  inspectionsAsInspector  Inspection[]   @relation("InspectionInspector")
 
   @@map("users")
 }
@@ -95,10 +102,11 @@ model Property {
   landlordId       String
   reviewedById     String?
 
-  location Location  @relation(fields: [locationId], references: [id])
-  landlord User      @relation(fields: [landlordId], references: [id], onDelete: Cascade)
-  bookings Booking[]
-  reviews  Review[]
+  location    Location     @relation(fields: [locationId], references: [id])
+  landlord    User         @relation(fields: [landlordId], references: [id], onDelete: Cascade)
+  bookings    Booking[]
+  reviews     Review[]
+  inspections Inspection[]
 
   @@map("properties")
 }
@@ -192,6 +200,34 @@ enum Role {
   ADMIN
   MODERATOR
   AUDITOR
+  INSPECTOR
+}
+
+model Inspection {
+  id          String           @id @default(cuid())
+  status      InspectionStatus @default(REQUESTED)
+  propertyId  String
+  studentId   String
+  inspectorId String?
+  scheduledAt DateTime?
+  completedAt DateTime?
+  expiresAt   DateTime
+  notes       String?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  property  Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  student   User     @relation("InspectionStudent",   fields: [studentId],   references: [id], onDelete: Cascade)
+  inspector User?    @relation("InspectionInspector", fields: [inspectorId], references: [id])
+
+  @@map("inspections")
+}
+
+enum InspectionStatus {
+  REQUESTED
+  ACCEPTED
+  COMPLETED
+  EXPIRED
 }
 
 enum VerificationStatus {

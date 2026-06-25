@@ -44,7 +44,7 @@ export async function PATCH(req: NextRequest) {
       return ok({ message: "Password updated" });
     }
 
-    const allowed = ["name", "phoneNumber", "campus", "bankName", "bankAccountNumber", "bankAccountName", "governmentIdUrl", "selfieUrl", "ownershipProofUrl", "matricCardUrl"];
+    const allowed = ["name", "phoneNumber", "campus", "bankName", "bankAccountNumber", "bankAccountName", "governmentIdUrl", "selfieUrl", "ownershipProofUrl", "matricCardUrl", "studentIdUrl", "portalScreenshotUrl"];
     const data: Record<string, unknown> = {};
     for (const key of allowed) {
       if (key in body && body[key] !== undefined) data[key] = body[key];

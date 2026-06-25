@@ -31,3 +31,11 @@ export function requireAuth(req: NextRequest, ...roles: string[]): TokenPayload 
     throw Object.assign(new Error("Forbidden"), { status: 403 });
   return auth;
 }
+
+// Verifies role=INSPECTOR. Routes that additionally need verificationStatus=VERIFIED
+// must check the DB themselves after calling this, e.g.:
+//   const inspector = await prisma.user.findUnique({ where: { id: auth.userId }, select: { verificationStatus: true } });
+//   if (inspector?.verificationStatus !== "VERIFIED") return fail("Inspector account not yet verified.", 403);
+export function requireVerifiedInspector(req: NextRequest): TokenPayload {
+  return requireAuth(req, "INSPECTOR");
+}
