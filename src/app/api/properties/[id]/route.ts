@@ -14,6 +14,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     const { id } = await params;
     const property = await prisma.property.findUnique({ where: { id }, include: INCLUDE });
     if (!property) return fail("Property not found", 404);
+    // Fire-and-forget view count increment
+    prisma.property.update({ where: { id }, data: { viewCount: { increment: 1 } } }).catch(() => {});
     return ok(property);
   } catch (e) {
     return catchError(e);

@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
 import { ok, fail, catchError } from "@/lib/res";
 import { sendBookingConfirmedEmail, sendBookingCancelledEmail } from "@/lib/email";
+import { createNotification } from "@/lib/notify";
 
 const INCLUDE = {
   property: {
@@ -65,8 +66,22 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       const landlordName = property.landlord?.name ?? "your landlord";
       if (status === "CONFIRMED") {
         await sendBookingConfirmedEmail(student.email, student.name, property.title, area, landlordName);
+        await createNotification(
+          booking.studentId,
+          "BOOKING_CONFIRMED",
+          "Booking confirmed",
+          `Your booking for "${property.title}" has been confirmed by ${landlordName}.`,
+          `/dashboard/bookings/${id}`
+        );
       } else if (status === "CANCELLED") {
         await sendBookingCancelledEmail(student.email, student.name, property.title, area, landlordName);
+        await createNotification(
+          booking.studentId,
+          "BOOKING_CANCELLED",
+          "Booking cancelled",
+          `Your booking for "${property.title}" was cancelled.`,
+          `/dashboard/bookings/${id}`
+        );
       }
     }
 

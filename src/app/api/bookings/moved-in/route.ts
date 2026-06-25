@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
 import { ok, fail, catchError } from "@/lib/res";
+import { createNotification } from "@/lib/notify";
 
 export async function POST(req: NextRequest) {
   try {
@@ -18,7 +19,16 @@ export async function POST(req: NextRequest) {
     const updated = await prisma.booking.update({
       where: { id: bookingId },
       data: { movedInConfirmedAt: new Date() },
+      include: { property: { select: { title: true } } },
     });
+
+    await createNotification(
+      auth.userId,
+      "MOVE_IN_CONFIRMED",
+      "Move-in confirmed",
+      `Welcome to your new place! You can now leave a review for "${updated.property?.title ?? "your property"}".`,
+      `/dashboard/bookings/${bookingId}`
+    );
 
     return ok(updated);
   } catch (e) {

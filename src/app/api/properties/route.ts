@@ -14,6 +14,7 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const mine = searchParams.get("mine") === "true";
     const status = searchParams.get("status");
+    const campus = searchParams.get("campus");
     const page = Math.max(1, parseInt(searchParams.get("page") ?? "1"));
     const pageSize = Math.min(100, parseInt(searchParams.get("pageSize") ?? "12"));
 
@@ -27,6 +28,10 @@ export async function GET(req: NextRequest) {
       where.status = status;
     } else {
       where.status = "APPROVED";
+    }
+
+    if (campus) {
+      where.location = { campus };
     }
 
     const [items, total] = await Promise.all([

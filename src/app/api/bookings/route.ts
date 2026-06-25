@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
 import { ok, fail, catchError } from "@/lib/res";
+import { createNotification } from "@/lib/notify";
 
 const INCLUDE = {
   property: {
@@ -42,7 +43,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const auth = requireAuth(req, "STUDENT");
-    const { propertyId, bidAmount } = await req.json();
+    const { propertyId, bidAmount, referralCode } = await req.json();
 
     if (!propertyId) return fail("Property ID is required");
 
@@ -52,8 +53,19 @@ export async function POST(req: NextRequest) {
     if (property.vacantUnits < 1) return fail("No vacant units available");
 
     const bid = Number(bidAmount ?? property.price);
-    const agencyFee = Math.round(bid * 0.05 * 100) / 100;
+    let agencyFee = Math.round(bid * 0.05 * 100) / 100;
     const cautionFee = Math.round(bid * 0.10 * 100) / 100;
+
+    // Apply referral discount
+    let appliedReferralCode: string | undefined;
+    if (referralCode) {
+      const referral = await prisma.referral.findUnique({ where: { code: (referralCode as string).toUpperCase() } });
+      if (referral && !referral.usedById) {
+        agencyFee = Math.round(agencyFee * 0.95 * 100) / 100;
+        appliedReferralCode = referral.code;
+        await prisma.referral.update({ where: { id: referral.id }, data: { usedById: auth.userId, usedAt: new Date() } });
+      }
+    }
 
     const booking = await prisma.booking.create({
       data: {
@@ -66,7 +78,16 @@ export async function POST(req: NextRequest) {
       include: INCLUDE,
     });
 
-    return ok(booking, 201);
+    // Notify landlord
+    await createNotification(
+      property.landlordId,
+      "BOOKING_REQUEST",
+      "New booking request",
+      `A student has requested to book "${property.title}".`,
+      `/dashboard/bookings/${booking.id}`
+    );
+
+    return ok({ ...booking, appliedReferralCode }, 201);
   } catch (e) {
     return catchError(e);
   }

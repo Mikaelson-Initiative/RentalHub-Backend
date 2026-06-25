@@ -9,22 +9,23 @@ datasource db {
 }
 
 model User {
-  id                 String             @id @default(cuid())
-  name               String
-  email              String             @unique
-  password           String?
-  role               Role               @default(STUDENT)
-  emailVerified      Boolean            @default(false)
-  verificationStatus VerificationStatus @default(UNVERIFIED)
-  governmentIdUrl    String?
-  selfieUrl          String?
-  ownershipProofUrl  String?
-  bankName           String?
-  bankAccountNumber  String?
-  bankAccountName    String?
-  avatarUrl          String?
-  phoneNumber        String?
-  phoneVerified      Boolean            @default(false)
+  id                   String             @id @default(cuid())
+  name                 String
+  email                String             @unique
+  password             String?
+  role                 Role               @default(STUDENT)
+  emailVerified        Boolean            @default(false)
+  verificationStatus   VerificationStatus @default(UNVERIFIED)
+  governmentIdUrl      String?
+  selfieUrl            String?
+  ownershipProofUrl    String?
+  matricCardUrl        String?
+  bankName             String?
+  bankAccountNumber    String?
+  bankAccountName      String?
+  avatarUrl            String?
+  phoneNumber          String?
+  phoneVerified        Boolean            @default(false)
   aiPreScreenScore     String?
   aiPreScreenNote      String?
   passwordResetToken   String?
@@ -32,9 +33,13 @@ model User {
   createdAt            DateTime           @default(now())
   updatedAt            DateTime           @updatedAt
 
-  properties Property[]
-  bookings   Booking[]
-  emailOtps  EmailOtp[]
+  properties     Property[]
+  bookings       Booking[]
+  emailOtps      EmailOtp[]
+  notifications  Notification[]
+  reviewsGiven   Review[]    @relation("StudentReviews")
+  referralsOwned Referral[]  @relation("ReferralOwner")
+  referralsUsed  Referral[]  @relation("ReferralUser")
 
   @@map("users")
 }
@@ -56,6 +61,9 @@ model Location {
   id             String     @id @default(cuid())
   name           String     @unique
   classification String     @default("Neighbourhood")
+  lat            Float?
+  lng            Float?
+  campus         String     @default("bouesti")
   createdAt      DateTime   @default(now())
   updatedAt      DateTime   @updatedAt
   properties     Property[]
@@ -73,6 +81,7 @@ model Property {
   images           Json           @default("[]")
   status           PropertyStatus @default(PENDING)
   vacantUnits      Int            @default(1)
+  viewCount        Int            @default(0)
   reviewNote       String?
   aiScamFlag       Boolean        @default(false)
   aiScamReason     String?
@@ -85,6 +94,7 @@ model Property {
   location Location  @relation(fields: [locationId], references: [id])
   landlord User      @relation(fields: [landlordId], references: [id], onDelete: Cascade)
   bookings Booking[]
+  reviews  Review[]
 
   @@map("properties")
 }
@@ -129,6 +139,47 @@ model Payment {
   booking     Booking       @relation(fields: [bookingId], references: [id])
 
   @@map("payments")
+}
+
+model Notification {
+  id        String    @id @default(cuid())
+  userId    String
+  type      String
+  title     String
+  body      String
+  link      String?
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
+
+model Review {
+  id         String   @id @default(cuid())
+  studentId  String
+  propertyId String
+  rating     Int
+  comment    String?
+  createdAt  DateTime @default(now())
+  student    User     @relation("StudentReviews", fields: [studentId], references: [id], onDelete: Cascade)
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, propertyId])
+  @@map("reviews")
+}
+
+model Referral {
+  id         String    @id @default(cuid())
+  code       String    @unique
+  referrerId String
+  usedById   String?
+  usedAt     DateTime?
+  createdAt  DateTime  @default(now())
+  referrer   User      @relation("ReferralOwner", fields: [referrerId], references: [id], onDelete: Cascade)
+  usedBy     User?     @relation("ReferralUser", fields: [usedById], references: [id])
+
+  @@map("referrals")
 }
 
 enum Role {

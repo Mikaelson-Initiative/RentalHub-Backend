@@ -14,6 +14,7 @@ export async function GET(req: NextRequest) {
         phoneNumber: true, avatarUrl: true,
         bankName: true, bankAccountNumber: true, bankAccountName: true,
         governmentIdUrl: true, selfieUrl: true, ownershipProofUrl: true,
+        matricCardUrl: true,
       },
     });
     return ok(user);
@@ -27,7 +28,7 @@ export async function PATCH(req: NextRequest) {
     const auth = requireAuth(req);
     const body = await req.json();
 
-    const allowed = ["name", "phoneNumber", "bankName", "bankAccountNumber", "bankAccountName", "governmentIdUrl", "selfieUrl", "ownershipProofUrl"];
+    const allowed = ["name", "phoneNumber", "bankName", "bankAccountNumber", "bankAccountName", "governmentIdUrl", "selfieUrl", "ownershipProofUrl", "matricCardUrl"];
     const data: Record<string, unknown> = {};
     for (const key of allowed) {
       if (key in body && body[key] !== undefined) data[key] = body[key];
