@@ -19,30 +19,19 @@ export async function GET(req: NextRequest) {
 
     if (expired.length === 0) return ok({ expired: 0 });
 
-    // Process each expired inspection in an atomic transaction.
-    await prisma.$transaction(
-      expired.map((job) =>
-        prisma.$transaction([
-          // 1. Mark inspection EXPIRED.
-          prisma.inspection.update({
-            where: { id: job.id },
-            data: { status: "EXPIRED" },
-          }),
-          // 2. Reset property back to AVAILABLE.
-          prisma.property.update({
-            where: { id: job.propertyId },
-            data: { listingStatus: "AVAILABLE" },
-          }),
-          // 3. Strike the assigned inspector (if any).
-          ...(job.inspectorId
-            ? [prisma.user.update({
-                where: { id: job.inspectorId },
-                data: { strikeCount: { increment: 1 } },
-              })]
-            : []),
-        ])
-      )
-    );
+    // Process each expired inspection atomically (one interactive transaction per job).
+    for (const job of expired) {
+      await prisma.$transaction(async (tx) => {
+        // 1. Mark inspection EXPIRED.
+        await tx.inspection.update({ where: { id: job.id }, data: { status: "EXPIRED" } });
+        // 2. Reset property back to AVAILABLE.
+        await tx.property.update({ where: { id: job.propertyId }, data: { listingStatus: "AVAILABLE" } });
+        // 3. Strike the assigned inspector (if any).
+        if (job.inspectorId) {
+          await tx.user.update({ where: { id: job.inspectorId }, data: { strikeCount: { increment: 1 } } });
+        }
+      });
+    }
 
     return ok({ expired: expired.length });
   } catch (e) {
