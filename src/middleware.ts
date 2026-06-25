@@ -1,6 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const PROD_ORIGINS = [process.env.FRONTEND_URL].filter(Boolean) as string[];
+// ALLOWED_ORIGINS accepts a comma-separated list, e.g.:
+// "https://rentalhub.ng,https://www.rentalhub.ng,https://hazard.rentalhub.ng"
+// Falls back to the legacy single FRONTEND_URL var if ALLOWED_ORIGINS isn't set.
+const PROD_ORIGINS = (
+  process.env.ALLOWED_ORIGINS || process.env.FRONTEND_URL || ""
+)
+  .split(",")
+  .map((s) => s.trim())
+  .filter(Boolean);
 
 function isAllowedOrigin(origin: string): boolean {
   if (PROD_ORIGINS.includes(origin)) return true;
