@@ -16,8 +16,11 @@ export async function GET(req: NextRequest) {
     const auth = requireAuth(req);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let where: any = {};
-    if (auth.role === "STUDENT")   where = { studentId: auth.userId };
-    else if (auth.role === "INSPECTOR") where = { inspectorId: auth.userId };
+    if (auth.role === "STUDENT") where = { studentId: auth.userId };
+    else if (auth.role === "INSPECTOR") {
+      // Show jobs already assigned to this inspector PLUS any open REQUESTED jobs they can pick up.
+      where = { OR: [{ inspectorId: auth.userId }, { status: "REQUESTED" }] };
+    }
     // ADMIN / MODERATOR see everything (no filter)
 
     const items = await prisma.inspection.findMany({
