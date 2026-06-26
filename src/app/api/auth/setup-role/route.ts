@@ -13,8 +13,7 @@ export async function PATCH(req: NextRequest) {
       return fail("Role must be STUDENT or LANDLORD");
     }
 
-    const trimmedCampus =
-      role === "LANDLORD" && typeof campus === "string" ? campus.trim() : "";
+    const trimmedCampus = typeof campus === "string" ? campus.trim() : "";
 
     const user = await prisma.user.update({
       where: { id: auth.userId },

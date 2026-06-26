@@ -31,6 +31,7 @@ model User {
   frozenReason         String?
   aiPreScreenScore     String?
   aiPreScreenNote      String?
+  googleId             String?            @unique
   passwordResetToken   String?
   passwordResetExpiry  DateTime?
   createdAt            DateTime           @default(now())
