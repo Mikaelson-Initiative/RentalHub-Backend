@@ -35,6 +35,7 @@ export async function POST(req: NextRequest) {
         email: user.email,
         role: user.role,
         verificationStatus: user.verificationStatus,
+        campus: user.campus,
       },
     });
   } catch (e) {

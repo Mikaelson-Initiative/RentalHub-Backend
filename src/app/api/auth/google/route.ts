@@ -65,6 +65,7 @@ export async function POST(req: NextRequest) {
         role: user.role,
         verificationStatus: user.verificationStatus,
         avatarUrl: user.avatarUrl ?? null,
+        campus: user.campus,
       },
     });
   } catch (e) {
