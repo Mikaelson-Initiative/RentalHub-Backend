@@ -5,7 +5,13 @@ import { requireAuth } from "@/lib/auth";
 import { ok, fail, catchError } from "@/lib/res";
 
 const INCLUDE = {
-  property: { select: { id: true, title: true, location: { select: { name: true } } } },
+  property: {
+    select: {
+      id: true, title: true, description: true,
+      images: true, distanceToCampus: true,
+      location: { select: { name: true } },
+    },
+  },
   student:  { select: { id: true, name: true, email: true } },
   inspector: { select: { id: true, name: true } },
 };

@@ -4,6 +4,18 @@ import { prisma } from "@/lib/prisma";
 import { requireVerifiedInspector } from "@/lib/auth";
 import { ok, fail, catchError } from "@/lib/res";
 
+const INCLUDE = {
+  property: {
+    select: {
+      id: true, title: true, description: true,
+      images: true, distanceToCampus: true,
+      location: { select: { name: true } },
+    },
+  },
+  student:  { select: { id: true, name: true, email: true } },
+  inspector: { select: { id: true, name: true } },
+};
+
 // PATCH — inspector accepts or completes a job.
 export async function PATCH(
   req: NextRequest,
@@ -40,6 +52,7 @@ export async function PATCH(
       const updated = await prisma.inspection.update({
         where: { id },
         data: { status: "ACCEPTED", inspectorId: auth.userId },
+        include: INCLUDE,
       });
       return ok(updated);
     }
@@ -68,6 +81,7 @@ export async function PATCH(
         notes: notes?.trim() ?? null,
         videoLink: videoLink.trim(),
       },
+      include: INCLUDE,
     });
     return ok(updated);
   } catch (e) {
