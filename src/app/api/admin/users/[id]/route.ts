@@ -3,7 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
 import { ok, fail, catchError } from "@/lib/res";
 
-// ADMIN and MODERATOR can freeze/flag users.
+const ALLOWED_ACTIONS = ["FREEZE", "UNFREEZE", "FLAG", "UNFLAG", "VERIFY", "REJECT"] as const;
+
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     requireAuth(req, "ADMIN", "MODERATOR");
@@ -11,11 +12,10 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     const { action, reason } = await req.json();
 
     if (!action) return fail("action is required");
-    if (!["FREEZE", "UNFREEZE", "FLAG", "UNFLAG"].includes(action)) {
-      return fail("action must be FREEZE, UNFREEZE, FLAG, or UNFLAG");
+    if (!ALLOWED_ACTIONS.includes(action)) {
+      return fail("action must be one of: FREEZE, UNFREEZE, VERIFY, REJECT, FLAG, UNFLAG");
     }
 
-    // Prevent moderators from touching other admin-level accounts
     const target = await prisma.user.findUnique({ where: { id }, select: { role: true } });
     if (!target) return fail("User not found", 404);
     if (["ADMIN", "MODERATOR", "AUDITOR"].includes(target.role)) {
@@ -27,11 +27,16 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (action === "UNFREEZE") { data.isFrozen = false; data.frozenReason = null; }
     if (action === "FLAG")     { data.frozenReason = reason ?? null; }
     if (action === "UNFLAG")   { data.frozenReason = null; }
+    if (action === "VERIFY")   { data.verificationStatus = "VERIFIED"; }
+    if (action === "REJECT")   { data.verificationStatus = "REJECTED"; }
 
     const user = await prisma.user.update({
       where: { id },
       data,
-      select: { id: true, name: true, email: true, isFrozen: true, frozenReason: true },
+      select: {
+        id: true, name: true, email: true, role: true,
+        isFrozen: true, frozenReason: true, verificationStatus: true,
+      },
     });
 
     return ok(user);
