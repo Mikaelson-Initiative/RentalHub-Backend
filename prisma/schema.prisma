@@ -212,9 +212,11 @@ model Inspection {
   scheduledAt DateTime?
   completedAt DateTime?
   expiresAt   DateTime
-  notes       String?
-  videoLink   String?
-  createdAt   DateTime         @default(now())
+  notes               String?
+  videoLink           String?
+  inspectorRating     Int?
+  inspectorReviewNote String?
+  createdAt           DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
 
   property  Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)

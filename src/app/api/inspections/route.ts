@@ -24,8 +24,9 @@ export async function GET(req: NextRequest) {
     let where: any = {};
     if (auth.role === "STUDENT") where = { studentId: auth.userId };
     else if (auth.role === "INSPECTOR") {
-      // Show jobs already assigned to this inspector PLUS any open REQUESTED jobs they can pick up.
-      where = { OR: [{ inspectorId: auth.userId }, { status: "REQUESTED" }] };
+      // Show jobs explicitly assigned to this inspector OR open undirected REQUESTED jobs.
+      // Directed requests (inspectorId set to someone else) stay hidden.
+      where = { OR: [{ inspectorId: auth.userId }, { status: "REQUESTED", inspectorId: null }] };
     }
     // ADMIN / MODERATOR see everything (no filter)
 
@@ -44,7 +45,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const auth = requireAuth(req, "STUDENT");
-    const { propertyId } = await req.json();
+    const { propertyId, inspectorId } = await req.json();
     if (!propertyId) return fail("propertyId is required.", 400);
 
     const property = await prisma.property.findUnique({
@@ -61,9 +62,10 @@ export async function POST(req: NextRequest) {
     });
     if (existing) return fail("You already have an open inspection request for this property.", 409);
 
-    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 h window
+    // Directed requests get 48 h; open requests expire in 24 h.
+    const expiresAt = new Date(Date.now() + (inspectorId ? 48 : 24) * 60 * 60 * 1000);
     const inspection = await prisma.inspection.create({
-      data: { propertyId, studentId: auth.userId, expiresAt },
+      data: { propertyId, studentId: auth.userId, expiresAt, ...(inspectorId ? { inspectorId } : {}) },
       include: INCLUDE,
     });
 
