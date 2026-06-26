@@ -50,6 +50,14 @@ export async function PATCH(req: NextRequest) {
       if (key in body && body[key] !== undefined) data[key] = body[key];
     }
 
+    // Inspector: document links must be Google Drive URLs
+    const driveFields = ["studentIdUrl", "portalScreenshotUrl"] as const;
+    for (const field of driveFields) {
+      if (data[field] && !/^https:\/\/(drive|docs)\.google\.com\//.test(data[field] as string)) {
+        return fail(`${field} must be a Google Drive link.`, 400);
+      }
+    }
+
     // Landlord: submitting all three doc URLs triggers verification review
     if (data.governmentIdUrl && data.selfieUrl && data.ownershipProofUrl) {
       data.verificationStatus = "UNDER_REVIEW";
