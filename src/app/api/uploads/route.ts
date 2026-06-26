@@ -10,7 +10,8 @@ export async function POST(req: NextRequest) {
     const file = formData.get("file") as File | null;
 
     if (!file) return fail("No file provided");
-    if (!file.type.startsWith("image/")) return fail("Only image files are allowed");
+    const allowed = file.type.startsWith("image/") || file.type === "application/pdf";
+    if (!allowed) return fail("Only image and PDF files are allowed");
     if (file.size > 10 * 1024 * 1024) return fail("File size must be under 10MB");
 
     const buffer = Buffer.from(await file.arrayBuffer());

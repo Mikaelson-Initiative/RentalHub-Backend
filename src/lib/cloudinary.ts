@@ -10,7 +10,7 @@ cloudinary.config({
 export async function uploadImage(buffer: Buffer): Promise<string> {
   return new Promise((resolve, reject) => {
     cloudinary.uploader
-      .upload_stream({ folder: "rentalhub", resource_type: "image" }, (err, result) => {
+      .upload_stream({ folder: "rentalhub", resource_type: "auto" }, (err, result) => {
         if (err || !result) reject(err ?? new Error("Cloudinary upload failed"));
         else resolve(result.secure_url);
       })
