@@ -12,7 +12,7 @@ function generateCode(name: string): string {
 
 export async function GET(req: NextRequest) {
   try {
-    const auth = requireAuth(req, "LANDLORD");
+    const auth = await requireAuth(req, "LANDLORD");
 
     let referral = await prisma.referral.findFirst({
       where: { referrerId: auth.userId },
@@ -40,7 +40,7 @@ export async function GET(req: NextRequest) {
 // Validate a code (used by student before booking)
 export async function POST(req: NextRequest) {
   try {
-    requireAuth(req, "STUDENT");
+    await requireAuth(req, "STUDENT");
     const { code } = await req.json();
     if (!code) return fail("code is required");
 

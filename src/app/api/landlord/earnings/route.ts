@@ -5,7 +5,7 @@ import { ok, catchError } from "@/lib/res";
 
 export async function GET(req: NextRequest) {
   try {
-    const auth = requireAuth(req, "LANDLORD");
+    const auth = await requireAuth(req, "LANDLORD");
 
     const bookings = await prisma.booking.findMany({
       where: { property: { landlordId: auth.userId }, paidAt: { not: null } },

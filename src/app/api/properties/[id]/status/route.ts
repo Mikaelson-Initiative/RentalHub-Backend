@@ -7,7 +7,7 @@ import { sendPropertyApprovedEmail, sendPropertyRejectedEmail } from "@/lib/emai
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
-    requireAuth(req, "ADMIN", "MODERATOR");
+    await requireAuth(req, "ADMIN", "MODERATOR");
 
     const { status, reason } = await req.json();
     if (!["APPROVED", "REJECTED"].includes(status))

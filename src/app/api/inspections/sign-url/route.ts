@@ -25,7 +25,7 @@ function buildS3Client() {
 
 export async function POST(req: NextRequest) {
   try {
-    const auth = requireVerifiedInspector(req);
+    const auth = await requireVerifiedInspector(req);
     const { purpose, contentType, fileName } = await req.json();
 
     if (!ALLOWED_PURPOSES.has(purpose)) return fail("Invalid upload purpose.", 400);

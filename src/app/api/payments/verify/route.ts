@@ -8,7 +8,7 @@ export const maxDuration = 30;
 
 export async function GET(req: NextRequest) {
   try {
-    const auth = requireAuth(req, "STUDENT");
+    const auth = await requireAuth(req, "STUDENT");
     const { searchParams } = new URL(req.url);
     const reference = searchParams.get("reference");
     const bookingId = searchParams.get("bookingId");

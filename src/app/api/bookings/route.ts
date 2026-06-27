@@ -3,7 +3,9 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
 import { ok, fail, catchError } from "@/lib/res";
 import { createNotification } from "@/lib/notify";
+import { BookingCreateSchema } from "@/lib/validations";
 import { bookingLimiter } from "@/lib/rate-limit";
+import { decrypt } from "@/lib/encryption";
 
 const INCLUDE = {
   property: {
@@ -17,9 +19,9 @@ const INCLUDE = {
 
 export async function GET(req: NextRequest) {
   try {
-    const auth = requireAuth(req);
+    const auth = await requireAuth(req);
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     let where: any = {};
     if (auth.role === "STUDENT") {
       where = { studentId: auth.userId };
@@ -35,6 +37,12 @@ export async function GET(req: NextRequest) {
       orderBy: { createdAt: "desc" },
     });
 
+    bookings.forEach(b => {
+      if (b.property?.landlord?.bankAccountNumber) {
+        b.property.landlord.bankAccountNumber = decrypt(b.property.landlord.bankAccountNumber);
+      }
+    });
+
     return ok(bookings);
   } catch (e) {
     return catchError(e);
@@ -46,10 +54,12 @@ export async function POST(req: NextRequest) {
   if (limited) return limited;
 
   try {
-    const auth = requireAuth(req, "STUDENT");
-    const { propertyId, bidAmount, referralCode } = await req.json();
+    const auth = await requireAuth(req, "STUDENT");
+    const body = await req.json();
+    const result = BookingCreateSchema.safeParse(body);
+    if (!result.success) return fail(result.error.issues[0].message, 400);
 
-    if (!propertyId) return fail("Property ID is required");
+    const { propertyId, bidAmount, referralCode } = result.data;
 
     const student = await prisma.user.findUnique({ where: { id: auth.userId }, select: { matricCardUrl: true } });
     if (!student?.matricCardUrl) return fail("Please upload your student ID card before placing a booking. Go to Profile to upload.", 403);

@@ -4,6 +4,7 @@ import { requireAuth } from "@/lib/auth";
 import { ok, fail, catchError } from "@/lib/res";
 import { sendBookingConfirmedEmail, sendBookingCancelledEmail } from "@/lib/email";
 import { createNotification } from "@/lib/notify";
+import { decrypt } from "@/lib/encryption";
 
 const INCLUDE = {
   property: {
@@ -18,7 +19,7 @@ const INCLUDE = {
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
-    const auth = requireAuth(req);
+    const auth = await requireAuth(req);
 
     const booking = await prisma.booking.findUnique({ where: { id }, include: INCLUDE });
     if (!booking) return fail("Booking not found", 404);
@@ -29,6 +30,10 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 
     if (!isStudent && !isLandlord && !isAdmin) return fail("Forbidden", 403);
 
+    if (booking?.property?.landlord?.bankAccountNumber) {
+      booking.property.landlord.bankAccountNumber = decrypt(booking.property.landlord.bankAccountNumber);
+    }
+
     return ok(booking);
   } catch (e) {
     return catchError(e);
@@ -38,7 +43,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
-    const auth = requireAuth(req);
+    const auth = await requireAuth(req);
     const body = await req.json();
 
     const booking = await prisma.booking.findUnique({ where: { id }, include: { property: true } });

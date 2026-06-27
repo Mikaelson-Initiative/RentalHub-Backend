@@ -20,8 +20,8 @@ const INCLUDE = {
 // GET — students see their own requests; inspectors see jobs assigned to them; admins see all.
 export async function GET(req: NextRequest) {
   try {
-    const auth = requireAuth(req);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const auth = await requireAuth(req);
+     
     let where: any = {};
     if (auth.role === "STUDENT") where = { studentId: auth.userId };
     else if (auth.role === "INSPECTOR") {
@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
   if (limited) return limited;
 
   try {
-    const auth = requireAuth(req, "STUDENT");
+    const auth = await requireAuth(req, "STUDENT");
     const { propertyId, inspectorId } = await req.json();
     if (!propertyId) return fail("propertyId is required.", 400);
 

@@ -31,7 +31,7 @@ export async function PATCH(
 
     // ── Student review ────────────────────────────────────────────
     if (action === "review") {
-      const auth = requireAuth(req, "STUDENT");
+      const auth = await requireAuth(req, "STUDENT");
       const inspection = await prisma.inspection.findUnique({ where: { id } });
       if (!inspection) return fail("Inspection not found.", 404);
       if (inspection.studentId !== auth.userId)
@@ -54,7 +54,7 @@ export async function PATCH(
     }
 
     // ── Inspector accept / complete ───────────────────────────────
-    const auth = requireVerifiedInspector(req);
+    const auth = await requireVerifiedInspector(req);
     const inspector = await prisma.user.findUnique({
       where: { id: auth.userId },
       select: { verificationStatus: true },

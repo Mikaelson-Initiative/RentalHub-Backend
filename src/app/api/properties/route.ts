@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getAuth, requireAuth } from "@/lib/auth";
 import { ok, fail, catchError } from "@/lib/res";
+import { PropertyQuerySchema, PropertyCreateSchema } from "@/lib/validations";
 
 const INCLUDE = {
   location: true,
@@ -12,15 +13,15 @@ const INCLUDE = {
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
-    const mine = searchParams.get("mine") === "true";
-    const status = searchParams.get("status");
-    const campus = searchParams.get("campus");
-    const page = Math.max(1, parseInt(searchParams.get("page") ?? "1"));
-    const pageSize = Math.min(100, parseInt(searchParams.get("pageSize") ?? "12"));
+    const parsedQuery = PropertyQuerySchema.safeParse(Object.fromEntries(searchParams));
+    if (!parsedQuery.success) {
+      return fail(parsedQuery.error.issues[0].message, 400);
+    }
+    const { mine, status, campus, page, pageSize } = parsedQuery.data;
 
     const auth = getAuth(req);
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     const where: any = {};
     if (mine && auth?.role === "LANDLORD") {
       where.landlordId = auth.userId;
@@ -56,18 +57,19 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const auth = requireAuth(req, "LANDLORD");
+    const auth = await requireAuth(req, "LANDLORD");
 
     const landlord = await prisma.user.findUnique({ where: { id: auth.userId }, select: { verificationStatus: true } });
     if (landlord?.verificationStatus !== "VERIFIED")
       return fail("Your account must be verified before you can submit a listing", 403);
 
-    const { title, description, price, locationName, locationId, distanceToCampus, amenities, images, vacantUnits } =
-      await req.json();
+    const body = await req.json();
+    const result = PropertyCreateSchema.safeParse(body);
+    if (!result.success) return fail(result.error.issues[0].message, 400);
 
-    if (!title || !description || !price) return fail("Title, description, and price are required");
+    const { title, description, price, locationName, locationId, distanceToCampus, amenities, images, vacantUnits } = result.data;
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     let locationConnect: any = undefined;
     if (locationId) {
       locationConnect = { connect: { id: locationId } };

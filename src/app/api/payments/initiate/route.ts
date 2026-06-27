@@ -5,7 +5,7 @@ import { ok, fail, catchError } from "@/lib/res";
 
 export async function POST(req: NextRequest) {
   try {
-    const auth = requireAuth(req, "STUDENT");
+    const auth = await requireAuth(req, "STUDENT");
     const { bookingId } = await req.json();
     if (!bookingId) return fail("Booking ID is required");
 

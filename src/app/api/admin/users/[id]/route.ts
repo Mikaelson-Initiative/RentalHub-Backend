@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { prismaAdmin as prisma } from "@/lib/prisma-admin";
 import { requireAuth } from "@/lib/auth";
 import { ok, fail, catchError } from "@/lib/res";
 
@@ -7,7 +7,7 @@ const ALLOWED_ACTIONS = ["FREEZE", "UNFREEZE", "FLAG", "UNFLAG", "VERIFY", "REJE
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const actor = requireAuth(req, "ADMIN", "MODERATOR");
+    const actor = await requireAuth(req, "ADMIN", "MODERATOR");
     const { id } = await params;
     const { action, reason } = await req.json();
 

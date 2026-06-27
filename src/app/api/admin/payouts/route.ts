@@ -1,11 +1,12 @@
 import { NextRequest } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { prismaAdmin as prisma } from "@/lib/prisma-admin";
 import { requireAuth } from "@/lib/auth";
 import { ok, fail, catchError } from "@/lib/res";
+import { decrypt } from "@/lib/encryption";
 
 export async function GET(req: NextRequest) {
   try {
-    requireAuth(req, "ADMIN", "AUDITOR");
+    await requireAuth(req, "ADMIN", "AUDITOR");
 
     const payouts = await prisma.booking.findMany({
       where: { paidAt: { not: null }, payoutStatus: "PENDING" },
@@ -23,6 +24,12 @@ export async function GET(req: NextRequest) {
       orderBy: { paidAt: "asc" },
     });
 
+    payouts.forEach((p) => {
+      if (p.property?.landlord?.bankAccountNumber) {
+        p.property.landlord.bankAccountNumber = decrypt(p.property.landlord.bankAccountNumber);
+      }
+    });
+
     return ok(payouts);
   } catch (e) {
     return catchError(e);
@@ -31,7 +38,7 @@ export async function GET(req: NextRequest) {
 
 export async function PATCH(req: NextRequest) {
   try {
-    requireAuth(req, "ADMIN", "AUDITOR");
+    await requireAuth(req, "ADMIN", "AUDITOR");
     const { bookingId, action } = await req.json();
 
     if (!bookingId || !action) return fail("bookingId and action are required");

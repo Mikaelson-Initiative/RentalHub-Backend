@@ -6,7 +6,7 @@ import { ok, fail, catchError } from "@/lib/res";
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
-    const auth = requireAuth(req);
+    const auth = await requireAuth(req);
 
     const notif = await prisma.notification.findUnique({ where: { id } });
     if (!notif) return fail("Not found", 404);

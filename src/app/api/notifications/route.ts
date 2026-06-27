@@ -5,7 +5,7 @@ import { ok, catchError } from "@/lib/res";
 
 export async function GET(req: NextRequest) {
   try {
-    const auth = requireAuth(req);
+    const auth = await requireAuth(req);
     const { searchParams } = new URL(req.url);
     const limit = Math.min(50, parseInt(searchParams.get("limit") ?? "20"));
 
@@ -26,7 +26,7 @@ export async function GET(req: NextRequest) {
 
 export async function PATCH(req: NextRequest) {
   try {
-    const auth = requireAuth(req);
+    const auth = await requireAuth(req);
     const { action } = await req.json();
     if (action === "readAll") {
       await prisma.notification.updateMany({

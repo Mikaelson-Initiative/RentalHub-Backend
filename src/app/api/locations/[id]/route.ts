@@ -5,7 +5,7 @@ import { ok, fail, catchError } from "@/lib/res";
 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    requireAuth(req, "ADMIN");
+    await requireAuth(req, "ADMIN");
     const { id } = await params;
     if (!id) return fail("Location id is required.", 400);
 

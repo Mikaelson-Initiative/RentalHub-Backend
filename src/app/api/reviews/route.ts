@@ -27,7 +27,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const auth = requireAuth(req, "STUDENT");
+    const auth = await requireAuth(req, "STUDENT");
     const { propertyId, rating, comment } = await req.json();
 
     if (!propertyId || !rating) return fail("propertyId and rating are required");

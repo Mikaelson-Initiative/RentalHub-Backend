@@ -25,7 +25,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
-    const auth = requireAuth(req, "LANDLORD", "ADMIN");
+    const auth = await requireAuth(req, "LANDLORD", "ADMIN");
     const body = await req.json();
 
     const property = await prisma.property.findUnique({ where: { id } });
@@ -36,7 +36,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     const { title, description, price, locationName, locationId, distanceToCampus, amenities, images, vacantUnits } =
       body;
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     let locationConnect: any = undefined;
     if (locationId) {
       locationConnect = { connect: { id: locationId } };
@@ -68,7 +68,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
-    const auth = requireAuth(req, "LANDLORD", "ADMIN");
+    const auth = await requireAuth(req, "LANDLORD", "ADMIN");
 
     const property = await prisma.property.findUnique({ where: { id } });
     if (!property) return fail("Property not found", 404);

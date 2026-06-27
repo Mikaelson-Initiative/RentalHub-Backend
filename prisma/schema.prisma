@@ -9,48 +9,49 @@ datasource db {
 }
 
 model User {
-  id                   String             @id @default(cuid())
-  name                 String
-  email                String             @unique
-  password             String?
-  role                 Role               @default(STUDENT)
-  emailVerified        Boolean            @default(false)
-  verificationStatus   VerificationStatus @default(UNVERIFIED)
-  governmentIdUrl      String?
-  selfieUrl            String?
-  ownershipProofUrl    String?
-  matricCardUrl        String?
-  bankName             String?
-  bankAccountNumber    String?
-  bankAccountName      String?
-  avatarUrl            String?
-  phoneNumber          String?
-  phoneVerified        Boolean            @default(false)
-  campus               String             @default("bouesti")
-  isFrozen             Boolean            @default(false)
-  frozenReason         String?
-  aiPreScreenScore     String?
-  aiPreScreenNote      String?
-  googleId             String?            @unique
-  passwordResetToken   String?
-  passwordResetExpiry  DateTime?
-  createdAt            DateTime           @default(now())
-  updatedAt            DateTime           @updatedAt
+  id                  String             @id @default(cuid())
+  name                String
+  email               String             @unique
+  password            String?
+  role                Role               @default(STUDENT)
+  emailVerified       Boolean            @default(false)
+  verificationStatus  VerificationStatus @default(UNVERIFIED)
+  governmentIdUrl     String?
+  selfieUrl           String?
+  ownershipProofUrl   String?
+  matricCardUrl       String?
+  bankName            String?
+  bankAccountNumber   String?
+  bankAccountName     String?
+  avatarUrl           String?
+  phoneNumber         String?
+  phoneVerified       Boolean            @default(false)
+  campus              String             @default("bouesti")
+  isFrozen            Boolean            @default(false)
+  frozenReason        String?
+  aiPreScreenScore    String?
+  aiPreScreenNote     String?
+  googleId            String?            @unique
+  passwordResetToken  String?
+  passwordResetExpiry DateTime?
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+  deletedAt           DateTime?
 
   matricNumber        String?
   studentIdUrl        String?
   portalScreenshotUrl String?
   strikeCount         Int     @default(0)
 
-  properties              Property[]
-  bookings                Booking[]
-  emailOtps               EmailOtp[]
-  notifications           Notification[]
-  reviewsGiven            Review[]       @relation("StudentReviews")
-  referralsOwned          Referral[]     @relation("ReferralOwner")
-  referralsUsed           Referral[]     @relation("ReferralUser")
-  inspectionsAsStudent    Inspection[]   @relation("InspectionStudent")
-  inspectionsAsInspector  Inspection[]   @relation("InspectionInspector")
+  properties             Property[]
+  bookings               Booking[]
+  emailOtps              EmailOtp[]
+  notifications          Notification[]
+  reviewsGiven           Review[]       @relation("StudentReviews")
+  referralsOwned         Referral[]     @relation("ReferralOwner")
+  referralsUsed          Referral[]     @relation("ReferralUser")
+  inspectionsAsStudent   Inspection[]   @relation("InspectionStudent")
+  inspectionsAsInspector Inspection[]   @relation("InspectionInspector")
 
   @@map("users")
 }
@@ -99,6 +100,7 @@ model Property {
   aiScamReason     String?
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
+  deletedAt        DateTime?
   locationId       String
   landlordId       String
   reviewedById     String?
@@ -169,14 +171,15 @@ model Notification {
 }
 
 model Review {
-  id         String   @id @default(cuid())
+  id         String    @id @default(cuid())
   studentId  String
   propertyId String
   rating     Int
   comment    String?
-  createdAt  DateTime @default(now())
-  student    User     @relation("StudentReviews", fields: [studentId], references: [id], onDelete: Cascade)
-  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  createdAt  DateTime  @default(now())
+  deletedAt  DateTime?
+  student    User      @relation("StudentReviews", fields: [studentId], references: [id], onDelete: Cascade)
+  property   Property  @relation(fields: [propertyId], references: [id], onDelete: Cascade)
 
   @@unique([studentId, propertyId])
   @@map("reviews")
@@ -205,23 +208,23 @@ enum Role {
 }
 
 model Inspection {
-  id          String           @id @default(cuid())
-  status      InspectionStatus @default(REQUESTED)
-  propertyId  String
-  studentId   String
-  inspectorId String?
-  scheduledAt DateTime?
-  completedAt DateTime?
-  expiresAt   DateTime
+  id                  String           @id @default(cuid())
+  status              InspectionStatus @default(REQUESTED)
+  propertyId          String
+  studentId           String
+  inspectorId         String?
+  scheduledAt         DateTime?
+  completedAt         DateTime?
+  expiresAt           DateTime
   notes               String?
   videoLink           String?
   inspectorRating     Int?
   inspectorReviewNote String?
   createdAt           DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
+  updatedAt           DateTime         @updatedAt
 
   property  Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  student   User     @relation("InspectionStudent",   fields: [studentId],   references: [id], onDelete: Cascade)
+  student   User     @relation("InspectionStudent", fields: [studentId], references: [id], onDelete: Cascade)
   inspector User?    @relation("InspectionInspector", fields: [inspectorId], references: [id])
 
   @@map("inspections")

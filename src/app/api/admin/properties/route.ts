@@ -1,11 +1,11 @@
 import { NextRequest } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { prismaAdmin as prisma } from "@/lib/prisma-admin";
 import { requireAuth } from "@/lib/auth";
 import { ok, catchError } from "@/lib/res";
 
 export async function GET(req: NextRequest) {
   try {
-    requireAuth(req, "ADMIN", "MODERATOR");
+    await requireAuth(req, "ADMIN", "MODERATOR");
 
     const { searchParams } = new URL(req.url);
     const status = searchParams.get("status") ?? undefined;

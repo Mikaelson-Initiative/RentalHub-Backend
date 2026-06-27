@@ -5,7 +5,7 @@ import { ok, fail, catchError } from "@/lib/res";
 
 export async function PATCH(req: NextRequest) {
   try {
-    const auth = requireAuth(req);
+    const auth = await requireAuth(req);
     const body = await req.json();
     const { role, campus } = body;
 

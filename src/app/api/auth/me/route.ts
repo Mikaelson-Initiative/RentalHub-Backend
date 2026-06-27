@@ -3,10 +3,11 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
 import { ok, fail, catchError } from "@/lib/res";
+import { encrypt, decrypt } from "@/lib/encryption";
 
 export async function GET(req: NextRequest) {
   try {
-    const auth = requireAuth(req);
+    const auth = await requireAuth(req);
     const user = await prisma.user.findUnique({
       where: { id: auth.userId },
       select: {
@@ -18,6 +19,9 @@ export async function GET(req: NextRequest) {
         matricCardUrl: true,
       },
     });
+    if (user && user.bankAccountNumber) {
+      user.bankAccountNumber = decrypt(user.bankAccountNumber);
+    }
     return ok(user);
   } catch (e) {
     return catchError(e);
@@ -26,7 +30,7 @@ export async function GET(req: NextRequest) {
 
 export async function PATCH(req: NextRequest) {
   try {
-    const auth = requireAuth(req);
+    const auth = await requireAuth(req);
     const body = await req.json();
 
     // Password change — separate from profile update
@@ -40,7 +44,7 @@ export async function PATCH(req: NextRequest) {
       const match = await bcrypt.compare(body.currentPassword, user.password);
       if (!match) return fail("Current password is incorrect");
 
-      await prisma.user.update({ where: { id: auth.userId }, data: { password: await bcrypt.hash(body.newPassword, 10) } });
+      await prisma.user.update({ where: { id: auth.userId }, data: { password: await bcrypt.hash(body.newPassword, 12) } });
       return ok({ message: "Password updated" });
     }
 
@@ -48,6 +52,10 @@ export async function PATCH(req: NextRequest) {
     const data: Record<string, unknown> = {};
     for (const key of allowed) {
       if (key in body && body[key] !== undefined) data[key] = body[key];
+    }
+    
+    if (data.bankAccountNumber && typeof data.bankAccountNumber === "string") {
+      data.bankAccountNumber = encrypt(data.bankAccountNumber);
     }
 
     // Landlord: submitting all three doc URLs triggers verification review
@@ -74,6 +82,10 @@ export async function PATCH(req: NextRequest) {
         matricCardUrl: true,
       },
     });
+
+    if (user.bankAccountNumber) {
+      user.bankAccountNumber = decrypt(user.bankAccountNumber);
+    }
 
     return ok(user);
   } catch (e) {

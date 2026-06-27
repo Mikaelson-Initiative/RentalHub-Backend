@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { prismaAdmin as prisma } from "@/lib/prisma-admin";
 import { requireAuth } from "@/lib/auth";
 import { ok, catchError } from "@/lib/res";
 
@@ -35,7 +35,7 @@ const LOCATIONS: Array<{ name: string; campus: string }> = [
 
 export async function POST(req: NextRequest) {
   try {
-    requireAuth(req, "ADMIN");
+    await requireAuth(req, "ADMIN");
 
     let created = 0;
     let updated = 0;

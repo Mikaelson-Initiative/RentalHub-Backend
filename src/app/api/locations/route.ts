@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    requireAuth(req, "ADMIN");
+    await requireAuth(req, "ADMIN");
     const { name, campus } = await req.json() as { name?: string; campus?: string };
     if (!name?.trim() || !campus?.trim()) return fail("Name and campus are required.", 400);
     const location = await prisma.location.create({
