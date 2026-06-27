@@ -59,7 +59,7 @@ export async function POST(req: NextRequest) {
   try {
     const auth = await requireAuth(req, "LANDLORD");
 
-    const landlord = await prisma.user.findUnique({ where: { id: auth.userId }, select: { verificationStatus: true } });
+    const landlord = await prisma.user.findUnique({ where: { id: auth.userId }, select: { verificationStatus: true, campus: true } });
     if (landlord?.verificationStatus !== "VERIFIED")
       return fail("Your account must be verified before you can submit a listing", 403);
 
@@ -74,7 +74,7 @@ export async function POST(req: NextRequest) {
     if (locationId) {
       locationConnect = { connect: { id: locationId } };
     } else if (locationName) {
-      locationConnect = { connectOrCreate: { where: { name: locationName }, create: { name: locationName } } };
+      locationConnect = { connectOrCreate: { where: { name: locationName }, create: { name: locationName, campus: landlord?.campus ?? "bouesti" } } };
     }
 
     const property = await prisma.property.create({
