@@ -34,13 +34,21 @@ export async function GET(req: NextRequest) {
 
     const now = new Date();
 
-    await prisma.payment.updateMany({
-      where: { paystackRef: reference },
-      data: { status: "SUCCESS", paidAt: now, channel: data.data.channel ?? null },
-    });
-
-    // Atomically mark booking PAID and property RENTED in one transaction
+    // Atomically verify payment and mark booking PAID in a single transaction.
+    // The idempotency check on booking.paidAt prevents double-processing if two
+    // concurrent verify calls both receive a "success" response from Paystack.
     const [booking] = await prisma.$transaction(async (tx) => {
+      const current = await tx.booking.findUnique({
+        where: { id: bookingId },
+        select: { paidAt: true },
+      });
+      if (current?.paidAt) return [null];
+
+      await tx.payment.updateMany({
+        where: { paystackRef: reference },
+        data: { status: "SUCCESS", paidAt: now, channel: data.data.channel ?? null },
+      });
+
       const updatedBooking = await tx.booking.update({
         where: { id: bookingId },
         data: { paidAt: now, paymentStatus: "SUCCESS", status: "PAID" },
@@ -60,6 +68,8 @@ export async function GET(req: NextRequest) {
 
       return [updatedBooking];
     });
+
+    if (!booking) return ok({ message: "Payment already verified", booking: null });
 
 
     if (booking.student && booking.property) {

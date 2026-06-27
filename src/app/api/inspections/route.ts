@@ -3,6 +3,7 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
 import { ok, fail, catchError } from "@/lib/res";
+import { inspectionLimiter } from "@/lib/rate-limit";
 
 const INCLUDE = {
   property: {
@@ -43,6 +44,9 @@ export async function GET(req: NextRequest) {
 
 // POST — student requests an inspection for a property.
 export async function POST(req: NextRequest) {
+  const limited = await inspectionLimiter(req);
+  if (limited) return limited;
+
   try {
     const auth = requireAuth(req, "STUDENT");
     const { propertyId, inspectorId } = await req.json();

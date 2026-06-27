@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
 import { ok, fail, catchError } from "@/lib/res";
 import { createNotification } from "@/lib/notify";
+import { bookingLimiter } from "@/lib/rate-limit";
 
 const INCLUDE = {
   property: {
@@ -41,6 +42,9 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const limited = await bookingLimiter(req);
+  if (limited) return limited;
+
   try {
     const auth = requireAuth(req, "STUDENT");
     const { propertyId, bidAmount, referralCode } = await req.json();
@@ -55,7 +59,20 @@ export async function POST(req: NextRequest) {
     if (property.status !== "APPROVED") return fail("Property is not available for booking");
     if (property.vacantUnits < 1) return fail("No vacant units available");
 
-    const bid = Number(bidAmount ?? property.price);
+    // Prevent duplicate open bookings for the same property.
+    const duplicate = await prisma.booking.findFirst({
+      where: { propertyId, studentId: auth.userId, status: { in: ["PENDING", "CONFIRMED", "AWAITING_PAYMENT"] } },
+    });
+    if (duplicate) return fail("You already have an active booking for this property.", 409);
+
+    const listingPrice = Number(property.price);
+    const bid = bidAmount != null ? Number(bidAmount) : listingPrice;
+
+    // Reject bids below 50% of listing price to prevent fee-manipulation attacks.
+    if (bid < listingPrice * 0.5) return fail("Bid amount is too low.");
+    // Reject bids more than 2× listing price as likely an input error.
+    if (bid > listingPrice * 2) return fail("Bid amount is too high.");
+
     let agencyFee = Math.round(bid * 0.05 * 100) / 100;
     const cautionFee = Math.round(bid * 0.10 * 100) / 100;
 

@@ -1,5 +1,6 @@
 import "server-only";
 import { NextRequest } from "next/server";
+import { randomBytes } from "crypto";
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { requireVerifiedInspector } from "@/lib/auth";
@@ -34,7 +35,8 @@ export async function POST(req: NextRequest) {
     if (!bucket) return fail("Storage not configured.", 500);
 
     const ext = (fileName as string)?.split(".").pop()?.toLowerCase() ?? "bin";
-    const key = `inspectors/${auth.userId}/${purpose}-${Date.now()}.${ext}`;
+    const nonce = randomBytes(16).toString("hex");
+    const key = `inspectors/${auth.userId}/${purpose}-${nonce}.${ext}`;
 
     const client = buildS3Client();
     const command = new PutObjectCommand({ Bucket: bucket, Key: key, ContentType: contentType });

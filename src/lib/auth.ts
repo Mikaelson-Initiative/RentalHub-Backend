@@ -11,14 +11,14 @@ export interface TokenPayload {
 }
 
 export function signToken(payload: TokenPayload): string {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: "24h" });
+  return jwt.sign(payload, JWT_SECRET, { algorithm: "HS256", expiresIn: "2h" });
 }
 
 export function getAuth(req: NextRequest): TokenPayload | null {
   const header = req.headers.get("authorization");
   if (!header?.startsWith("Bearer ")) return null;
   try {
-    return jwt.verify(header.slice(7), JWT_SECRET) as TokenPayload;
+    return jwt.verify(header.slice(7), JWT_SECRET, { algorithms: ["HS256"] }) as TokenPayload;
   } catch {
     return null;
   }

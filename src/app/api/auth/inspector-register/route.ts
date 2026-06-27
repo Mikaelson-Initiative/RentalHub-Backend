@@ -1,10 +1,13 @@
 import "server-only";
 import { NextRequest } from "next/server";
 import bcrypt from "bcryptjs";
+import { randomInt } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { signToken } from "@/lib/auth";
 import { sendOtpEmail } from "@/lib/email";
 import { ok, fail, catchError } from "@/lib/res";
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export async function POST(req: NextRequest) {
   try {
@@ -13,8 +16,9 @@ export async function POST(req: NextRequest) {
     if (!name?.trim() || !email?.trim() || !password || !matricNumber?.trim()) {
       return fail("Name, email, password, and matric number are required.");
     }
-    if (!email.includes("@")) return fail("Enter a valid email address.");
-    if (password.length < 8) return fail("Password must be at least 8 characters.");
+    if (!EMAIL_RE.test(email.trim())) return fail("Enter a valid email address.");
+    if (typeof password !== "string" || password.length < 8) return fail("Password must be at least 8 characters.");
+    if (password.length > 72) return fail("Password must be at most 72 characters.");
 
     const existing = await prisma.user.findUnique({ where: { email: email.trim().toLowerCase() } });
     if (existing) return fail("Email already registered.", 409);
@@ -34,7 +38,7 @@ export async function POST(req: NextRequest) {
     });
 
     // OTP for email verification
-    const otp = String(Math.floor(100000 + Math.random() * 900000));
+    const otp = String(randomInt(100000, 1000000));
     const codeHash = await bcrypt.hash(otp, 10);
     await prisma.emailOtp.create({
       data: { userId: user.id, email: user.email, codeHash, expiresAt: new Date(Date.now() + 15 * 60 * 1000) },

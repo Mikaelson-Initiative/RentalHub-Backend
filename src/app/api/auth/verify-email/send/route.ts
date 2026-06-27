@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import bcrypt from "bcryptjs";
+import { randomInt } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { sendOtpEmail } from "@/lib/email";
 import { ok, fail, catchError } from "@/lib/res";
@@ -13,7 +14,7 @@ export async function POST(req: NextRequest) {
     if (!user) return fail("User not found", 404);
     if (user.emailVerified) return fail("Email is already verified");
 
-    const otp = String(Math.floor(100000 + Math.random() * 900000));
+    const otp = String(randomInt(100000, 1000000));
     const codeHash = await bcrypt.hash(otp, 10);
     const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
 

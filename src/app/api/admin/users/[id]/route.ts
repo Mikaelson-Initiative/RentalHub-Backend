@@ -7,7 +7,7 @@ const ALLOWED_ACTIONS = ["FREEZE", "UNFREEZE", "FLAG", "UNFLAG", "VERIFY", "REJE
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    requireAuth(req, "ADMIN", "MODERATOR");
+    const actor = requireAuth(req, "ADMIN", "MODERATOR");
     const { id } = await params;
     const { action, reason } = await req.json();
 
@@ -38,6 +38,16 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         isFrozen: true, frozenReason: true, verificationStatus: true,
       },
     });
+
+    console.log(JSON.stringify({
+      audit: true,
+      action,
+      targetUserId: id,
+      actorId: actor.userId,
+      actorRole: actor.role,
+      reason: reason ?? null,
+      ts: new Date().toISOString(),
+    }));
 
     return ok(user);
   } catch (e) {

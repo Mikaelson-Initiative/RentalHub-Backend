@@ -3,8 +3,12 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { signToken } from "@/lib/auth";
 import { ok, fail, catchError } from "@/lib/res";
+import { otpLimiter } from "@/lib/rate-limit";
 
 export async function POST(req: NextRequest) {
+  const limited = await otpLimiter(req);
+  if (limited) return limited;
+
   try {
     const { email, otp } = await req.json();
     if (!email || !otp) return fail("Email and OTP are required");

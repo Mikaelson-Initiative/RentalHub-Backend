@@ -58,3 +58,18 @@ export const forgotPasswordLimiter = makeChecker(
 export const loginLimiter = makeChecker(
   new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(5, "15 m"), prefix: "rl:login" })
 );
+
+// 10 OTP attempts per IP per 15 minutes — prevents brute-forcing 6-digit codes (10^6 space).
+export const otpLimiter = makeChecker(
+  new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(10, "15 m"), prefix: "rl:otp" })
+);
+
+// 5 booking creations per IP per hour — prevents booking-spam / fee manipulation loops.
+export const bookingLimiter = makeChecker(
+  new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(5, "1 h"), prefix: "rl:booking" })
+);
+
+// 10 inspection requests per IP per hour — prevents inspection request flooding.
+export const inspectionLimiter = makeChecker(
+  new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(10, "1 h"), prefix: "rl:inspection" })
+);

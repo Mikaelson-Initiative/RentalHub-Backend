@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import bcrypt from "bcryptjs";
+import { createHash } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { ok, fail, catchError } from "@/lib/res";
 
@@ -8,11 +9,14 @@ export async function POST(req: NextRequest) {
     const { token, password } = await req.json();
 
     if (!token || !password) return fail("Token and password are required");
-    if (password.length < 8) return fail("Password must be at least 8 characters");
+    if (typeof password !== "string" || password.length < 8) return fail("Password must be at least 8 characters");
+    if (password.length > 72) return fail("Password must be at most 72 characters");
+
+    const tokenHash = createHash("sha256").update(String(token)).digest("hex");
 
     const user = await prisma.user.findFirst({
       where: {
-        passwordResetToken: token,
+        passwordResetToken: tokenHash,
         passwordResetExpiry: { gt: new Date() },
       },
     });
